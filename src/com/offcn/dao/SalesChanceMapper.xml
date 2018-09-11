@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.offcn.dao.SalesChanceMapper">
+   <sql id="search_like_sql">
+       <trim prefix="where" prefixOverrides="and">
+          <if test="LIKE_custName !=null and LIKE_custName != '' ">
+             and cust_name like concat(concat('%',#{LIKE_custName}),'%')
+          </if>
+          <if test="LIKE_title !=null and LIKE_title != '' ">
+             and title like concat(concat('%',#{LIKE_title}),'%')
+          </if>
+          <if test="LIKE_contact !=null and LIKE_contact != '' ">
+             and contact like concat(concat('%',#{LIKE_contact}),'%')
+          </if>
+       </trim>
+   </sql>
+   <select id="gettotalRecord" resultType="java.lang.Integer">
+       select count(*) from sales_chances
+       <include refid="search_like_sql"></include>
+   </select>
+   <select id="getPageList" resultType="com.offcn.bean.SalesChance">
+       select * 
+       from
+       		(select rownum rn,id,cust_name custName,title,contact,contact_tel contactTel,create_date createDate 
+       			from sales_chances
+       			<include refid="search_like_sql"></include>
+      		 ) temp
+       where rn>=#{first} and rn &lt; #{end}
+   </select>
+  
+   <delete id="delete">
+       delete from sales_chances where id=#{id}
+   </delete>	
+   <insert id="add">
+       insert into sales_chances(id,source,cust_name,rate,title,contact,contact_tel,description,create_date) 
+       values(#{id},#{source},#{custName},#{rate},#{title},#{contact},#{contactTel},#{description},#{createDate})
+   </insert>
+   <select id="getScsById" resultType="com.offcn.bean.SalesChance">
+       select id,source,cust_name custName,rate,title,contact,contact_tel contactTel,
+       description,create_date createDate from sales_chances where id=#{id}
+   </select>
+   <update id="update">
+       update sales_chances set source=#{source},cust_name=#{custName},rate=#{rate},title=#{title},
+       contact=#{contact},contact_tel=#{contactTel},description=#{description},
+       create_date=#{createDate} where id=#{id}
+   </update>
+   
+   <resultMap type="com.offcn.bean.SalesChance" id="getUserByIdRm">
+      <id column="sid" property="id"/>
+      <result column="source" property="source"/>
+      <result column="custName" property="custName"/>
+      <result column="rate" property="rate"/>
+      <result column="title" property="title"/>
+      <result column="contact" property="contact"/>
+      <result column="contactTel" property="contactTel"/>
+      <result column="description" property="description"/>
+      <result column="createDate" property="createDate"/>
+      <result column="designeeDate" property="designeeDate"/>
+      <result column="designee_id" property="createBy.id"/>
+      <result column="name" property="createBy.name"/>
+   </resultMap>
+   <select id="getUserById" resultMap="getUserByIdRm">
+       select s.id sid,s.source,s.cust_name custName,s.rate,s.title,s.contact,s.contact_tel contactTel,
+       s.description,s.create_date createDate,s.designee_date designeeDate,s.designee_id,u.name  
+       from sales_chances s
+       left outer join users u
+       on s.designee_id=u.id
+       where s.id=#{id}
+   </select>
+   <update id="assign">
+       update sales_chances set status=2,designee_id=#{designee.id},designee_date=#{designeeDate} where id=#{id}
+   </update>
+</mapper>
